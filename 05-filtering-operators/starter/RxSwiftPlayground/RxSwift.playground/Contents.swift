@@ -1,6 +1,23 @@
 //: Please build the scheme 'RxSwiftPlayground' first
 import RxSwift
 
+example(of: "elementAt") {
+    // 1
+    let strikes = PublishSubject<String>()
+    let disposeBag = DisposeBag()
+    // 2
+    strikes
+        .elementAt(2)
+        .subscribe(onNext: { _ in
+            print("You're out!")
+        })
+        .addDisposableTo(disposeBag)
+    
+    strikes.onNext("X")
+    strikes.onNext("X")
+    strikes.onNext("X")
+//    strikes.onNext("X")
+}
 
 
 /*:
