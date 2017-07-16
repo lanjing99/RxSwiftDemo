@@ -31,12 +31,71 @@ class ViewController: UIViewController {
   @IBOutlet weak var humidityLabel: UILabel!
   @IBOutlet weak var iconLabel: UILabel!
   @IBOutlet weak var cityNameLabel: UILabel!
+    
+    let bag = DisposeBag()
 
   override func viewDidLoad() {
     super.viewDidLoad()
     // Do any additional setup after loading the view, typically from a nib.
-
     style()
+    
+    ApiController.shared.currentWeather(city: "RxSwift")
+    .observeOn(MainScheduler.instance)
+    .subscribe(onNext: { weather in
+        self.tempLabel.text = "\(weather.temperature) C"
+        self.iconLabel.text = "\(weather.icon)"
+        self.humidityLabel.text = "\(weather.humidity)%"
+        self.cityNameLabel.text = weather.cityName
+    })
+    .addDisposableTo(bag)
+
+    // Bind To
+//    let search = searchCityName.rx.text
+//        .filter{ ($0 ?? "").isEmpty == false }
+//        .flatMap{ text in
+//            return ApiController.shared.currentWeather(city: text ?? "Error")
+//                    .catchErrorJustReturn(ApiController.Weather.empty)
+//        }
+//        .observeOn(MainScheduler.instance)
+//    
+//    search.map{ "\($0.temperature) C" }
+//    .bind(to: tempLabel.rx.text)
+//    .addDisposableTo(bag)
+//    
+//    search.map{ "\($0.icon)" }
+//        .bind(to: iconLabel.rx.text)
+//        .addDisposableTo(bag)
+//    
+//    search.map{ "\($0.humidity)%" }
+//        .bind(to: humidityLabel.rx.text)
+//        .addDisposableTo(bag)
+//    search.map{ "\($0.cityName)%" }
+//        .bind(to: cityNameLabel.rx.text)
+//        .addDisposableTo(bag)
+    
+    
+    let search = searchCityName.rx.controlEvent(.editingDidEndOnExit).asObservable()
+        .map{ self.searchCityName.text }
+        .flatMap{ text in
+            return ApiController.shared.currentWeather(city: text ?? "Error")
+                .catchErrorJustReturn(ApiController.Weather.empty)
+        }
+        .asDriver(onErrorJustReturn: ApiController.Weather.empty)
+    
+    search.map{ "\($0.temperature) C" }
+        .drive(tempLabel.rx.text)
+        .addDisposableTo(bag)
+    
+    search.map{ "\($0.icon)" }
+        .drive(iconLabel.rx.text)
+        .addDisposableTo(bag)
+    
+    search.map{ "\($0.humidity)%" }
+        .drive(humidityLabel.rx.text)
+        .addDisposableTo(bag)
+    search.map{ "\($0.cityName)%" }
+        .drive(cityNameLabel.rx.text)
+        .addDisposableTo(bag)
 
   }
 
